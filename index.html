@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracepy — step through Python, watch the structures move</title>
+<meta name="description" content="Paste Python, step through it line by line, and watch arrays, stacks, queues, linked lists, trees, heaps and hash maps render themselves in real time.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/simplescrollbars.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">&gt;_</span>
+    <span class="brand-name">tracepy</span>
+    <span class="brand-tag">frame-by-frame python</span>
+  </div>
+
+  <div class="topbar-controls">
+    <label class="select-wrap">
+      <span>example</span>
+      <select id="exampleSelect">
+        <option value="">— pick a snippet —</option>
+      </select>
+    </label>
+    <button id="runBtn" class="btn btn-primary">Run ▶</button>
+  </div>
+</header>
+
+<main class="workspace">
+
+  <section class="pane pane-left">
+    <div class="pane-header">
+      <span class="file-tab"><span class="file-dot"></span>source.py</span>
+      <span class="pane-hint">left pane — your code</span>
+    </div>
+
+    <div class="editor-toolbar">
+      <div class="toolbar-group">
+        <button id="copyBtn" class="icon-btn" title="Copy code">⧉ copy</button>
+        <button id="uploadBtn" class="icon-btn" title="Upload a .py file">⇧ upload</button>
+        <button id="downloadBtn" class="icon-btn" title="Download as .py">⇩ save</button>
+        <button id="clearBtn" class="icon-btn" title="Clear editor">✕ clear</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="wrapBtn" class="icon-btn toggle-btn" title="Toggle line wrap">↵ wrap</button>
+        <button id="fontMinusBtn" class="icon-btn icon-btn-sq" title="Smaller text">A-</button>
+        <button id="fontPlusBtn" class="icon-btn icon-btn-sq" title="Larger text">A+</button>
+      </div>
+      <input id="fileInput" type="file" accept=".py,text/x-python,text/plain" class="hidden">
+    </div>
+
+    <div id="editor" class="editor-host"></div>
+
+    <div class="status-bar">
+      <span id="statusPos">Ln 1, Col 1</span>
+      <span class="status-sep">·</span>
+      <span id="statusCounts">0 lines · 0 chars</span>
+      <span id="copyToast" class="copy-toast hidden">copied ✓</span>
+    </div>
+
+    <div id="errorBar" class="error-bar hidden"></div>
+  </section>
+
+  <section class="pane pane-right">
+    <div class="pane-header">
+      <span>live structures</span>
+      <span class="pane-hint">right pane — visual state</span>
+    </div>
+
+    <div class="legend" id="legend">
+      <span class="legend-item"><i class="dot dot-array"></i>array</span>
+      <span class="legend-item"><i class="dot dot-stack"></i>stack</span>
+      <span class="legend-item"><i class="dot dot-queue"></i>queue</span>
+      <span class="legend-item"><i class="dot dot-map"></i>hash map</span>
+      <span class="legend-item"><i class="dot dot-set"></i>set</span>
+      <span class="legend-item"><i class="dot dot-list"></i>linked list</span>
+      <span class="legend-item"><i class="dot dot-tree"></i>tree</span>
+      <span class="legend-item"><i class="dot dot-heap"></i>heap</span>
+      <span class="legend-item"><i class="dot dot-scalar"></i>scalar</span>
+    </div>
+
+    <div id="stateBoard" class="state-board">
+      <div class="empty-state">
+        <p>Run some code and each variable will get its own card here —
+        arrays as boxes, linked lists as chained nodes, trees as diagrams, maps as tables.</p>
+      </div>
+    </div>
+
+    <div class="console-wrap">
+      <div class="console-header">stdout</div>
+      <pre id="consoleOut" class="console-out"></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer class="tape-deck">
+  <div class="tape-controls">
+    <button id="prevBtn" class="tape-btn" title="Previous step">◀</button>
+    <button id="playBtn" class="tape-btn tape-btn-play" title="Play / Pause">▶</button>
+    <button id="nextBtn" class="tape-btn" title="Next step">▶|</button>
+    <button id="resetBtn" class="tape-btn" title="Reset to start">↺</button>
+    <input id="speedRange" type="range" min="80" max="1400" value="500" title="Playback speed">
+    <span id="stepLabel" class="step-label">0 / 0</span>
+  </div>
+  <div id="tapeTrack" class="tape-track">
+    <div class="tape-empty">the film strip fills up once you run some code —
+      each frame is one executed line</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/simplescrollbars.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+<script src="examples.js"></script>
+<script src="tracer.js"></script>
+<script src="visualizers.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
